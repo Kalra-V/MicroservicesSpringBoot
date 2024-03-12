@@ -6,6 +6,8 @@ import com.embarkx.jobms.job.JobRepository;
 import com.embarkx.jobms.job.JobService;
 import com.embarkx.jobms.job.dto.JobWithCompanyDTO;
 import com.embarkx.jobms.job.external.Company;
+import com.embarkx.jobms.job.mapper.JobMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -18,8 +20,9 @@ import java.util.stream.Collectors;
 @Service
 public class JobServiceImpl implements JobService {
     @Override
-    public Job getJobById(Long id) {
-        return jobRepository.findById(id).orElse(null);
+    public JobWithCompanyDTO getJobById(Long id) {
+        Job job = jobRepository.findById(id).orElse(null);
+        return convertToDto(job);
     }
 
     @Override
@@ -50,6 +53,8 @@ public class JobServiceImpl implements JobService {
 
     //private List<Job> jobs = new ArrayList<>();
     JobRepository jobRepository;
+    @Autowired
+    RestTemplate restTemplate;
 
     public JobServiceImpl(JobRepository jobRepository) {
         this.jobRepository = jobRepository;
@@ -64,12 +69,13 @@ public class JobServiceImpl implements JobService {
     }
 
     private JobWithCompanyDTO convertToDto(Job job) {
-            JobWithCompanyDTO jobWithCompanyDTO = new JobWithCompanyDTO();
-            jobWithCompanyDTO.setJob(job);
-            RestTemplate restTemplate = new RestTemplate();
+            //RestTemplate restTemplate = new RestTemplate();
             Company company = restTemplate.getForObject(
-                    "http://localhost:8081/companies/" + job.getCompanyId(),
+                    "http://company-service:8081/companies/" + job.getCompanyId(),
                     Company.class);
+
+            JobWithCompanyDTO jobWithCompanyDTO = JobMapper.
+                    mapToJobWithCompanyDto(job, company);
             jobWithCompanyDTO.setCompany(company);
             return jobWithCompanyDTO;
         }
