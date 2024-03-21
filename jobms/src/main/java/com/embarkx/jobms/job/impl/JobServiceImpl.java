@@ -4,15 +4,18 @@ package com.embarkx.jobms.job.impl;
 import com.embarkx.jobms.job.Job;
 import com.embarkx.jobms.job.JobRepository;
 import com.embarkx.jobms.job.JobService;
-import com.embarkx.jobms.job.dto.JobWithCompanyDTO;
+import com.embarkx.jobms.job.dto.JobDTO;
 import com.embarkx.jobms.job.external.Company;
+import com.embarkx.jobms.job.external.Reviews;
 import com.embarkx.jobms.job.mapper.JobMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -20,7 +23,7 @@ import java.util.stream.Collectors;
 @Service
 public class JobServiceImpl implements JobService {
     @Override
-    public JobWithCompanyDTO getJobById(Long id) {
+    public JobDTO getJobById(Long id) {
         Job job = jobRepository.findById(id).orElse(null);
         return convertToDto(job);
     }
@@ -61,23 +64,31 @@ public class JobServiceImpl implements JobService {
     }
 
     @Override
-    public List<JobWithCompanyDTO> findAll() {
+    public List<JobDTO> findAll() {
         List<Job> jobs = jobRepository.findAll();
-        List<JobWithCompanyDTO> jobWithCompanyDTOs = new ArrayList<>();
+        List<JobDTO> jobDTOS = new ArrayList<>();
 
         return jobs.stream().map(this::convertToDto).collect(Collectors.toList());
     }
 
-    private JobWithCompanyDTO convertToDto(Job job) {
+    private JobDTO convertToDto(Job job) {
             //RestTemplate restTemplate = new RestTemplate();
             Company company = restTemplate.getForObject(
                     "http://company-service:8081/companies/" + job.getCompanyId(),
                     Company.class);
 
-            JobWithCompanyDTO jobWithCompanyDTO = JobMapper.
-                    mapToJobWithCompanyDto(job, company);
-            jobWithCompanyDTO.setCompany(company);
-            return jobWithCompanyDTO;
+            ResponseEntity<List<Reviews>> reviewResponse = restTemplate.exchange("http://reviews-service:8083/reviews?companyId=" + job.getCompanyId(),
+                    HttpMethod.GET,
+                    null,
+                    new ParameterizedTypeReference<List<Reviews>>() {
+                    });
+
+            List<Reviews> reviews = reviewResponse.getBody();
+
+            JobDTO jobDTO = JobMapper.
+                    mapToJobWithCompanyDto(job, company, reviews);
+            //jobDTO.setCompany(company);
+            return jobDTO;
         }
     @Override
     public void createJob(Job job) {

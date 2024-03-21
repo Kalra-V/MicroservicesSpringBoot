@@ -1,9 +1,11 @@
 package com.embarkx.jobms.job.dto;
 
-import com.embarkx.jobms.job.Job;
 import com.embarkx.jobms.job.external.Company;
+import com.embarkx.jobms.job.external.Reviews;
 
-public class JobWithCompanyDTO {
+import java.util.List;
+
+public class JobDTO {
     private Long id;
     private String title;
     private String description;
@@ -11,6 +13,7 @@ public class JobWithCompanyDTO {
     private String maxSalary;
     private String location;
     private Company company;
+    private List<Reviews> reviews;
 
     public Long getId() {
         return id;
@@ -66,5 +69,13 @@ public class JobWithCompanyDTO {
 
     public void setCompany(Company company) {
         this.company = company;
+    }
+
+    public List<Reviews> getReview() {
+        return reviews;
+    }
+
+    public void setReview(List<Reviews> reviews) {
+        this.reviews = reviews;
     }
 }
